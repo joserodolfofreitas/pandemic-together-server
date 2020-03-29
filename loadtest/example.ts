@@ -4,7 +4,7 @@ export function requestJoinOptions (this: Client, i: number) {
     return { requestNumber: i };
 }
 
-export function onJoin(this: Room) {
+export function onJoin(this: Room) {no
     console.log(this.sessionId, "joined.");
 }
 

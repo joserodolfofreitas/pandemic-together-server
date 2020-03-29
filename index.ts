@@ -3,9 +3,7 @@ import express from "express";
 import cors from "cors";
 import { Server } from "colyseus";
 import { monitor } from "@colyseus/monitor";
-// import socialRoutes from "@colyseus/social/express"
-
-import { MyRoom } from "./MyRoom";
+import { PandemicTogetherRoom } from "./src/PandemicTogetherRoom";
 
 const port = Number(process.env.PORT || 2567);
 const app = express()
@@ -19,7 +17,7 @@ const gameServer = new Server({
 });
 
 // register your room handlers
-gameServer.define('my_room', MyRoom);
+gameServer.define('pandemic-together-room', PandemicTogetherRoom);
 
 /**
  * Register @colyseus/social routes
