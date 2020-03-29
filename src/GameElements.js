@@ -5,7 +5,7 @@ export const GameElements = {
     cards: [
 
         {
-            elementId: "VIRUS1",
+            elementId: "V1",
             type: Constants.CARD_TYPE_VIRUS,
             name: "Virus",
             description: "Infections Killing Virus initial stage",
