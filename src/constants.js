@@ -16,6 +16,7 @@ export const GM_BEGIN_TURN = 'GM_BEGIN_TURN';
 export const GM_FINISH_TURN = 'GM_FINISH_TURN';
 export const GM_DRAW_CARD = 'GM_DRAW_CARD';
 export const GM_PLAY_CARD = 'GM_PLAY_CARD';
+export const GM_ADVANCE_TURN = 'GM_ADVANCE_TURN';
 export const GM_START_GAME = 'GM_START_GAME';
 export const GM_CHAT_MESSAGE = 'GM_CHAT_MESSAGE';
 
