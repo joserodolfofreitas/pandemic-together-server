@@ -29,7 +29,7 @@ export function getShuffledMainDeck(numberOfPlayers) {
 
 
     var deck = [];
-    for (var i = 0; i < 4 * numberOfPlayers; i++) {
+    for (var i = 0; i < numberOfPlayers; i++) {
         deck.push(virusCard);
     }
 
