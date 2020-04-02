@@ -5,7 +5,7 @@ import { Server } from "colyseus";
 import { monitor } from "@colyseus/monitor";
 import { PandemicTogetherRoom } from "./src/PandemicTogetherRoom";
 
-const port = Number(process.env.PORT || 2567) + Number(process.env.NODE_APP_INSTANCE || 0)gi;
+const port = Number(process.env.PORT || 2567) + Number(process.env.NODE_APP_INSTANCE || 0);
 const app = express()
 
 app.use(cors());
