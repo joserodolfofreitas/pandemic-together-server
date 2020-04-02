@@ -5,7 +5,7 @@ import { Server } from "colyseus";
 import { monitor } from "@colyseus/monitor";
 import { PandemicTogetherRoom } from "./src/PandemicTogetherRoom";
 
-const port = Number(process.env.PORT || 2567);
+const port = Number(process.env.PORT || 2567) + Number(process.env.NODE_APP_INSTANCE || 0);
 const app = express()
 
 app.use(cors());
@@ -19,15 +19,6 @@ const gameServer = new Server({
 // register your room handlers
 gameServer.define('pandemic-together-room', PandemicTogetherRoom);
 
-/**
- * Register @colyseus/social routes
- *
- * - uncomment if you want to use default authentication (https://docs.colyseus.io/authentication/)
- * - also uncomment the import statement
- */
-// app.use("/", socialRoutes);
-
-// register colyseus monitor AFTER registering your room handlers
 app.use("/colyseus", monitor());
 
 gameServer.listen(port);
