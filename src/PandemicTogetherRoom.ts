@@ -50,6 +50,7 @@ class State extends Schema {
   @type("uint8") numberOfPlayers: number;
   @type("string") currentTurn: string;
   @type("uint8") round: number;
+  @type("uint8") numberOfVirus: number;
   @type({ map: Player }) players = new MapSchema();
   @type([ Card ]) deck = new ArraySchema<Card>();
   @type([ Card ]) disadvantagesDeck = new ArraySchema<Card>();
@@ -63,7 +64,9 @@ export class PandemicTogetherRoom extends Room {
   setMainDeck() {
 
     var tempArray = DeckFunctions.getShuffledMainDeck(this.state.numberOfPlayers);
-
+    this.state.numberOfVirus = tempArray.filter(function(card) {
+      return card.type == Constants.CARD_TYPE_VIRUS;
+    }).length;
     this.state.deck = new ArraySchema<Card>();
     tempArray.forEach((card, index) => {
       card.cardId = "cardUID_" + index + "_" + Date.now();
@@ -206,6 +209,10 @@ export class PandemicTogetherRoom extends Room {
           if (onVirus.tokens < 1) {
             onPlayer.virusField = onPlayer.virusField.filter(card  => card.cardId != onCard.cardId);
             onVirus = null;
+            this.state.numberOfVirus = this.state.numberOfVirus - 1;
+            if (this.state.numberOfVirus == 0) {
+              this.state.gameState = Constants.GAME_STATE_VICTORY_END;
+            }
           }
         });
 
