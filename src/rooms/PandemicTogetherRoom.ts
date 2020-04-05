@@ -5,7 +5,7 @@ import * as Constants from "../common/constants";
 import * as DeckFunctions from "../game-components/DeckFunctions";
 import Card from "../game-components/Card";
 import Player from "../game-components/Player";
-import GameHandler from "../game-components/GameHandler";
+import GameHandler from "../game-components/GameManager";
 
 export class PandemicTogetherRoom extends Room {
 

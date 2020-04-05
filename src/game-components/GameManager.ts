@@ -24,6 +24,7 @@ class State extends Schema {
     @type([ NewRoundMessage ]) newRoundMessages = new ArraySchema<NewRoundMessage>();
     @type({ map: Player }) players = new MapSchema();
     @type([ Card ]) deck = new ArraySchema<Card>();
+    @type([ Card ]) cardGraveyard = new ArraySchema<Card>();
     @type([ Card ]) disadvantagesDeck = new ArraySchema<Card>();
     @type([ Card ]) advantagesDeck = new ArraySchema<Card>();
 }
@@ -116,31 +117,34 @@ class GameHandler {
                 //TODO apply disadvantages and advantages
                 player.advantages.map((advantage) => {
 
-                    var onCards = new ArraySchema<Card>();
+                    if (player.virusField.length > 0) {
+                        var onCards = new ArraySchema<Card>();
 
-                    for (var i = 0; i < advantage.maxImpactPerElement; i++) {
-                        var index = Math.floor(Math.random() * player.virusField.length); // TODO verify non repeating index
-                        onCards.push(player.virusField[index]);
-                    }
-
-                    if (onCards.length > 0) {
-                        this.applyCardEffect(advantage, player, onCards);
-
-                        var onCardIds = new ArraySchema<string>();
-                        for (var j = 0; j < onCards.length; j++) {
-                            const card = onCards[j];
-                            onCardIds.push(card.cardId);
+                        for (var i = 0; i < advantage.maxImpactPerElement; i++) {
+                            var index = Math.floor(Math.random() * player.virusField.length); // TODO verify non repeating index
+                            onCards.push(player.virusField[index]);
                         }
 
-                        var newRoundMessage = new NewRoundMessage();
-                        newRoundMessage.type = advantage.type;
-                        newRoundMessage.action = advantage.action;
-                        newRoundMessage.playerId = player.sessionId;
-                        newRoundMessage.cardSrc = advantage.cardId;
-                        newRoundMessage.cardTargets = onCardIds;
-                        newRoundMessage.virusTokenImpact = (advantage.type == Constants.ACTION_DESTROY_VIRUS_TOKEN) ? "+1" : "0";
-                        this.state.newRoundMessages.push(newRoundMessage);
+                        if (onCards.length > 0) {
+                            this.applyCardEffect(advantage, player, onCards);
+
+                            var onCardIds = new ArraySchema<string>();
+                            for (var j = 0; j < onCards.length; j++) {
+                                const card = onCards[j];
+                                onCardIds.push(card.cardId);
+                            }
+
+                            var newRoundMessage = new NewRoundMessage();
+                            newRoundMessage.type = advantage.type;
+                            newRoundMessage.action = advantage.action;
+                            newRoundMessage.playerId = player.sessionId;
+                            newRoundMessage.cardSrc = advantage.cardId;
+                            newRoundMessage.cardTargets = onCardIds;
+                            newRoundMessage.virusTokenImpact = (advantage.type == Constants.ACTION_DESTROY_VIRUS_TOKEN) ? "+1" : "0";
+                            this.state.newRoundMessages.push(newRoundMessage);
+                        }
                     }
+
 
                     //TODO missing A4
                 });
@@ -249,8 +253,8 @@ class GameHandler {
                     var onVirus = onPlayer.virusField.filter(card => card.cardId == onCard.cardId)[0];
                     onVirus.tokens -= card.maxImpactPerElement;
                     if (onVirus.tokens < 1) {
-                        onPlayer.virusField = onPlayer.virusField.filter(card => card.cardId != onCard.cardId);
-                        onVirus = null;
+                        //onPlayer.virusField = onPlayer.virusField.filter(card => card.cardId != onCard.cardId);
+                        onVirus.graveyard = true;
                         this.state.numberOfVirus = this.state.numberOfVirus - 1;
                         if (this.state.numberOfVirus == 0) {
                             this.state.gameState = Constants.GAME_STATE_VICTORY_END;
@@ -278,7 +282,12 @@ class GameHandler {
     playerPlays(playMessage) {
         var player = this.state.players[playMessage.player];
         var onPlayer = this.state.players[playMessage.onPlayer];
-        const cardPlayed = playMessage.cardPlayed;
+
+        var cardPlayed = player.hand.filter(card => card.cardId == playMessage.cardPlayed.cardId)[0]; //playMessage.cardPlayed;
+
+        if (cardPlayed == undefined) {
+            throw new Error("CardPlayed not found on server");
+        }
 
         const onCards = onPlayer.virusField.filter(card => {
             for (var i = 0; i < playMessage.onCardIds.length; i++) {
@@ -291,7 +300,8 @@ class GameHandler {
         });
 
         this.applyCardEffect(cardPlayed, onPlayer, onCards);
-        player.hand = player.hand.filter(card => card.cardId != cardPlayed.cardId);
+        //player.hand = player.hand.filter(card => card.cardId != cardPlayed.cardId); //remove card from hand
+        cardPlayed.graveyard = true;
         this.nextTurn();
     }
 
