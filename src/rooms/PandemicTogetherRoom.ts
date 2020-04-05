@@ -40,6 +40,7 @@ export class PandemicTogetherRoom extends Room {
         break;
       case Constants.GM_START_GAME:
         this.gameHandler.startNewGame();
+        this.lock();
         break;
       case Constants.GM_ADVANCE_TURN:
         this.gameHandler.nextTurn();
@@ -58,6 +59,7 @@ export class PandemicTogetherRoom extends Room {
     this.state.numberOfPlayers--;
 
     //game over
+    this.unlock();
     this.broadcast({type: "SERVER_MESSAGE", action: "GAME_OVER", reason: client.sessionId + " left"});
     this.gameHandler.resetGame(); //keep room
 

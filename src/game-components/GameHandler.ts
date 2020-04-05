@@ -4,8 +4,6 @@ import * as DeckFunctions from "./DeckFunctions";
 import Card from "./Card";
 import Player from "./Player";
 
-
-
 class State extends Schema {
     @type("string") gameState: string;
     @type("uint8") numberOfPlayers: number;
