@@ -6,16 +6,12 @@ import Player from "./Player";
 
 
 class NewRoundMessage extends Schema {
-    @type("string") gameState: string;
-    @type("uint8") numberOfPlayers: number;
-    @type("string") currentTurn: string;
-    @type("uint8") numberOfVirus: number;
-    @type("uint8") round: number;
-    @type("string") roundState: string;
-    @type({ map: Player }) players = new MapSchema();
-    @type([ Card ]) deck = new ArraySchema<Card>();
-    @type([ Card ]) disadvantagesDeck = new ArraySchema<Card>();
-    @type([ Card ]) advantagesDeck = new ArraySchema<Card>();
+    @type("string") type: string;
+    @type("string") action: string;
+    @type("string") playerId: string;
+    @type("string") cardSrc: string;
+    @type([ "string" ]) cardTargets = new ArraySchema<string>();
+    @type("string") virusTokenImpact: string;
 }
 
 class State extends Schema {
@@ -113,15 +109,64 @@ class GameHandler {
     applyNewRoundRules() {
         console.log("next round");
         if (this.state.round > 0) {
+            this.state.newRoundMessages = new ArraySchema<NewRoundMessage>();
+
             for (let id in this.state.players) {
                 var player = this.state.players[id];
+                //TODO apply disadvantages and advantages
+                player.advantages.map((advantage) => {
+
+                    var onCards = new ArraySchema<Card>();
+
+                    for (var i = 0; i < advantage.maxImpactPerElement; i++) {
+                        var index = Math.floor(Math.random() * player.virusField.length); // TODO verify non repeating index
+                        onCards.push(player.virusField[index]);
+                    }
+
+                    if (onCards.length > 0) {
+                        this.applyCardEffect(advantage, player, onCards);
+
+                        var onCardIds = new ArraySchema<string>();
+                        for (var j = 0; j < onCards.length; j++) {
+                            const card = onCards[j];
+                            onCardIds.push(card.cardId);
+                        }
+
+                        var newRoundMessage = new NewRoundMessage();
+                        newRoundMessage.type = advantage.type;
+                        newRoundMessage.action = advantage.action;
+                        newRoundMessage.playerId = player.sessionId;
+                        newRoundMessage.cardSrc = advantage.cardId;
+                        newRoundMessage.cardTargets = onCardIds;
+                        newRoundMessage.virusTokenImpact = (advantage.type == Constants.ACTION_DESTROY_VIRUS_TOKEN) ? "+1" : "0";
+                        this.state.newRoundMessages.push(newRoundMessage);
+                    }
+
+                    //TODO missing A4
+                });
+
+                player.disadvantages.map((disadvantage) => {
+
+                });
+
                 player.virusField.map((virus) => {
                     if (!virus.contained) {
                         virus.tokens++;
+                        let cardTargets = new ArraySchema<string>();
+                        cardTargets.push(virus.cardId);
+
+                        var newRoundMessage = new NewRoundMessage();
+                        newRoundMessage.type = virus.type;
+                        newRoundMessage.action = virus.action;
+                        newRoundMessage.playerId = player.sessionId;
+                        newRoundMessage.cardTargets = cardTargets
+                        newRoundMessage.virusTokenImpact = "+1";
+                        this.state.newRoundMessages.push(newRoundMessage);
                     }
                 });
+
             }
-            //TODO apply disadvantages and advantages
+
 
             this.state.roundState = Constants.ROUND_STATE_VIRUS_PHASE;
         } else {
