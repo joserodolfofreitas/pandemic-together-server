@@ -45,6 +45,9 @@ export class PandemicTogetherRoom extends Room {
       case Constants.GM_ADVANCE_TURN:
         this.gameHandler.nextTurn();
         break;
+      case Constants.GM_END_NEW_ROUND_ANIMATIONS:
+        this.gameHandler.moveRoundToPlayersPhase(message.playerId);
+        break;
       case Constants.GM_CHAT_MESSAGE:
         break;
     }

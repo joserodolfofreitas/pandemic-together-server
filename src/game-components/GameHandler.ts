@@ -4,12 +4,28 @@ import * as DeckFunctions from "./DeckFunctions";
 import Card from "./Card";
 import Player from "./Player";
 
+
+class NewRoundMessage extends Schema {
+    @type("string") gameState: string;
+    @type("uint8") numberOfPlayers: number;
+    @type("string") currentTurn: string;
+    @type("uint8") numberOfVirus: number;
+    @type("uint8") round: number;
+    @type("string") roundState: string;
+    @type({ map: Player }) players = new MapSchema();
+    @type([ Card ]) deck = new ArraySchema<Card>();
+    @type([ Card ]) disadvantagesDeck = new ArraySchema<Card>();
+    @type([ Card ]) advantagesDeck = new ArraySchema<Card>();
+}
+
 class State extends Schema {
     @type("string") gameState: string;
     @type("uint8") numberOfPlayers: number;
     @type("string") currentTurn: string;
-    @type("uint8") round: number;
     @type("uint8") numberOfVirus: number;
+    @type("uint8") round: number;
+    @type("string") roundState: string;
+    @type([ NewRoundMessage ]) newRoundMessages = new ArraySchema<NewRoundMessage>();
     @type({ map: Player }) players = new MapSchema();
     @type([ Card ]) deck = new ArraySchema<Card>();
     @type([ Card ]) disadvantagesDeck = new ArraySchema<Card>();
@@ -19,6 +35,7 @@ class State extends Schema {
 class GameHandler {
 
     state : State;
+    playersThatEndedNewRoundAnimations = [];
 
     constructor() {
         this.state = new State();
@@ -69,7 +86,7 @@ class GameHandler {
             return;
         }
         var cardDeck = this.state.deck.pop();
-        var card = new Card(cardDeck); //I dont know why but I had to reinstatiate it.
+        var card = new Card(cardDeck); //reinstantiating card to push all data to client.
         card.cardHolder = player.sessionId;
 
         if (card.type == Constants.CARD_TYPE_VIRUS) {
@@ -104,9 +121,14 @@ class GameHandler {
                     }
                 });
             }
+            //TODO apply disadvantages and advantages
+
+            this.state.roundState = Constants.ROUND_STATE_VIRUS_PHASE;
+        } else {
+            this.state.roundState = Constants.ROUND_STATE_PLAYERS_PHASE; //first round rules don't apply.
         }
         this.state.round = this.state.round + 1;
-        //TODO apply disadvantages and advantages
+
     }
 
     nextTurn() {
@@ -120,7 +142,6 @@ class GameHandler {
                 const id = playerIds[i];
                 if (this.state.currentTurn == id) {
                     var newTurnIndex = (i + 1 == playerIds.length) ? 0 : i + 1;
-
                     if (newTurnIndex == 0) {
                         this.applyNewRoundRules();
                     }
@@ -132,10 +153,21 @@ class GameHandler {
         this.drawCardForPlayer(this.state.players[this.state.currentTurn]);
     }
 
+    moveRoundToPlayersPhase(playerId) {
+        if (!this.playersThatEndedNewRoundAnimations.includes(playerId)) {
+            this.playersThatEndedNewRoundAnimations.push(playerId);
+        }
+        if (this.playersThatEndedNewRoundAnimations.length == this.state.numberOfPlayers) {
+            this.playersThatEndedNewRoundAnimations = [];
+            this.state.roundState = Constants.ROUND_STATE_PLAYERS_PHASE;
+        }
+    }
+
     startNewGame() {
         this.setupDecks();
         this.setPlayersInitialHands();
         this.state.gameState = Constants.GAME_STATE_STARTED;
+        this.state.roundState = Constants.ROUND_STATE_INITIAL_DRAW; //in case we ever need to do some animations at the beginning of the game.
         this.nextTurn();
     }
 
