@@ -18,7 +18,7 @@ const gameServer = new Server({
 });
 
 // register your room handlers
-gameServer.define('lobby', Lobby);
+gameServer.define('lobby', Lobby); //TODO lobby is blank and dumm
 gameServer.define('pandemic-together-room', PandemicTogetherRoom);
 
 app.use("/colyseus", monitor());
