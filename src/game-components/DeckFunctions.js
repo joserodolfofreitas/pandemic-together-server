@@ -1,5 +1,5 @@
 import { GameElements } from './GameElements'
-import * as Constants from './constants';
+import * as Constants from './../common/constants';
 
 function shuffle(array) {
     var currentIndex = array.length, temporaryValue, randomIndex;
