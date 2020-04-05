@@ -3,7 +3,8 @@ import express from "express";
 import cors from "cors";
 import { Server } from "colyseus";
 import { monitor } from "@colyseus/monitor";
-import { PandemicTogetherRoom } from "./src/PandemicTogetherRoom";
+import { PandemicTogetherRoom } from "./src/rooms/PandemicTogetherRoom";
+import { Lobby } from "./src/rooms/Lobby";
 
 const port = Number(process.env.PORT || 2567) + Number(process.env.NODE_APP_INSTANCE || 0);
 const app = express()
@@ -17,6 +18,7 @@ const gameServer = new Server({
 });
 
 // register your room handlers
+gameServer.define('lobby', Lobby); //TODO lobby is blank and dumm
 gameServer.define('pandemic-together-room', PandemicTogetherRoom);
 
 app.use("/colyseus", monitor());

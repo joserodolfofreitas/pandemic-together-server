@@ -1,4 +1,4 @@
-import * as Constants from './constants';
+import * as Constants from '../common/constants';
 
 //unique cards
 export const GameElements = {
