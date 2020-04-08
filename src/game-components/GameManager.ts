@@ -125,8 +125,7 @@ class GameHandler {
                         newRoundMessage.cardSrc = advantage.cardId;
                         newRoundMessage.nullifiedBy = nullifiedBy[0].elementId;
                         this.state.newRoundMessages.push(newRoundMessage);
-
-                        continue;
+                        
                     } else {
                         if (player.virusField.length > 0) {
                             var onCards = new ArraySchema<Card>();
