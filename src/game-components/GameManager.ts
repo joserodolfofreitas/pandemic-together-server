@@ -8,6 +8,7 @@ import Player from "./Player";
 class NewRoundMessage extends Schema {
     @type("string") type: string;
     @type("string") action: string;
+    @type("string") nullifiedBy: string;
     @type("string") playerId: string;
     @type("string") cardSrc: string;
     @type([ "string" ]) cardTargets = new ArraySchema<string>();
@@ -116,37 +117,48 @@ class GameHandler {
                 var player = this.state.players[id];
                 //TODO apply disadvantages and advantages
                 player.advantages.map((advantage) => {
+                    const nullifiedBy = player.disadvantages.filter(card => card.action == Constants.ACTION_PREVENT_RESOURCE && card.impactedElements.includes(advantage.elementId));
+                    if (nullifiedBy != undefined && nullifiedBy.length > 0) {
+                        var newRoundMessage = new NewRoundMessage();
+                        newRoundMessage.type = advantage.type;
+                        newRoundMessage.playerId = player.sessionId;
+                        newRoundMessage.cardSrc = advantage.cardId;
+                        newRoundMessage.nullifiedBy = nullifiedBy[0].elementId;
+                        this.state.newRoundMessages.push(newRoundMessage);
 
-                    if (player.virusField.length > 0) {
-                        var onCards = new ArraySchema<Card>();
+                        continue;
+                    } else {
+                        if (player.virusField.length > 0) {
+                            var onCards = new ArraySchema<Card>();
 
-                        for (var i = 0; i < advantage.maxTokensImpact; i++) {
-                            var index = Math.floor(Math.random() * player.virusField.length); // TODO verify non repeating index
-                            onCards.push(player.virusField[index]);
-                        }
-
-                        if (onCards.length > 0) {
-                            this.applyCardEffect(advantage, player, onCards);
-
-                            var onCardIds = new ArraySchema<string>();
-                            for (var j = 0; j < onCards.length; j++) {
-                                const card = onCards[j];
-                                onCardIds.push(card.cardId);
+                            for (var i = 0; i < advantage.maxTokensImpact; i++) {
+                                var index = Math.floor(Math.random() * player.virusField.length); // TODO verify non repeating index
+                                onCards.push(player.virusField[index]);
                             }
 
-                            var newRoundMessage = new NewRoundMessage();
-                            newRoundMessage.type = advantage.type;
-                            newRoundMessage.action = advantage.action;
-                            newRoundMessage.playerId = player.sessionId;
-                            newRoundMessage.cardSrc = advantage.cardId;
-                            newRoundMessage.cardTargets = onCardIds;
-                            newRoundMessage.virusTokenImpact = (advantage.type == Constants.ACTION_DESTROY_VIRUS_TOKEN) ? "+1" : "0";
-                            this.state.newRoundMessages.push(newRoundMessage);
+                            if (onCards.length > 0) {
+                                this.applyCardEffect(advantage, player, onCards);
+
+                                var onCardIds = new ArraySchema<string>();
+                                for (var j = 0; j < onCards.length; j++) {
+                                    const card = onCards[j];
+                                    onCardIds.push(card.cardId);
+                                }
+
+                                var newRoundMessage = new NewRoundMessage();
+                                newRoundMessage.type = advantage.type;
+                                newRoundMessage.action = advantage.action;
+                                newRoundMessage.playerId = player.sessionId;
+                                newRoundMessage.cardSrc = advantage.cardId;
+                                newRoundMessage.cardTargets = onCardIds;
+                                newRoundMessage.virusTokenImpact = (advantage.type == Constants.ACTION_DESTROY_VIRUS_TOKEN) ? "+1" : "0";
+                                this.state.newRoundMessages.push(newRoundMessage);
+                            }
                         }
+
+
+                        //TODO missing A4
                     }
-
-
-                    //TODO missing A4
                 });
 
                 player.disadvantages.map((disadvantage) => {
