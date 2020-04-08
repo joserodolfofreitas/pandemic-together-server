@@ -3,7 +3,7 @@ import * as Constants from "../common/constants";
 import * as DeckFunctions from "./DeckFunctions";
 import Card from "./Card";
 import Player from "./Player";
-import apply = Reflect.apply;
+import { GameElements } from './GameElements'
 
 
 class NewRoundMessage extends Schema {
@@ -11,6 +11,7 @@ class NewRoundMessage extends Schema {
     @type("string") action: string;
     @type("string") nullifiedBy: string;
     @type("string") playerId: string;
+    @type("string") playerSrc: string;
     @type("string") cardSrc: string;
     @type([ "string" ]) cardTargets = new ArraySchema<string>();
     @type("string") virusTokenImpact: string;
@@ -108,6 +109,59 @@ class GameHandler {
         }
     }
 
+    virusSpreadToPlayer(player, virusSrc) {
+        const nullifiedBy = player.advantages.filter(counterCard => counterCard.action == Constants.ACTION_PREVENT_FROM_NEIGHBOR_INFECTION);
+        var newRoundMessage = new NewRoundMessage();
+
+        if (nullifiedBy.length > 0) {
+            console.log("spreadTo", player.name, "but it was nullified");
+            newRoundMessage.type = Constants.ACTION_NEIGHBOUR_INFECTION;
+            newRoundMessage.playerId = player.sessionId;
+            newRoundMessage.playerSrc = virusSrc.cardHolder.sessionId;
+            newRoundMessage.cardSrc = virusSrc.cardId;
+            newRoundMessage.nullifiedBy = nullifiedBy[0].elementId;
+        } else {
+            var cardRef = GameElements.cards[0];
+            var card = new Card(Object.assign(cardRef, {cardId : "cardUID_NBV_" + Date.now() + "__SRC__" + virusSrc.cardId}));
+            card.cardHolder = player.sessionId;
+            player.virusField.push(card);
+
+            newRoundMessage.type = Constants.ACTION_NEIGHBOUR_INFECTION;
+            newRoundMessage.playerId = player.sessionId;
+            newRoundMessage.playerSrc = virusSrc.cardHolder.sessionId;
+            newRoundMessage.cardSrc = virusSrc.cardId;
+            newRoundMessage.cardTargets.push(card.cardId);
+        }
+
+        this.state.newRoundMessages.push(newRoundMessage);
+    }
+
+    applyVirusSpread () {
+        const playerIds = Object.keys(this.state.players);
+        for (var playerIndex = 0; playerIndex < playerIds.length; playerIndex++) {
+            const player = this.state.players[playerIds[playerIndex]];
+            if (player.virusField.length > 0) {
+                player.virusField.map((virus) => {
+                    if (!virus.contained) { //contained virus don't spread.
+                        if (virus.tokens >= Constants.TOKENS_SPREAD_THRESHOLD && !virus.spreadedToNeighbours) {
+                            var neighborToTheLeft = playerIndex + 1;
+                            if (neighborToTheLeft >= playerIds.length) {
+                                neighborToTheLeft = 0;
+                            }
+                            this.virusSpreadToPlayer(this.state.players[playerIds[neighborToTheLeft]], virus);
+                            var neighborToTheRight = playerIndex -1;
+                            if (neighborToTheRight < 0) {
+                                neighborToTheRight = playerIds.length - 1;
+                            }
+                            this.virusSpreadToPlayer(this.state.players[playerIds[neighborToTheRight]], virus);
+                            virus.spreadedToNeighbours = true;
+                        }
+                    }
+                });
+            }
+
+        }
+    }
     applyCharacterEffects (player, cardsArray, counterCardsArray) {
         cardsArray.map((card) => {
             const nullifiedBy = counterCardsArray.filter(counterCard => counterCard.action == Constants.ACTION_PREVENT_CARD_ACTION && counterCard.impactedElements.includes(card.elementId));
@@ -207,6 +261,8 @@ class GameHandler {
             }
 
 
+            this.applyVirusSpread();
+
             this.state.roundState = Constants.ROUND_STATE_VIRUS_PHASE;
         } else {
             this.state.roundState = Constants.ROUND_STATE_PLAYERS_PHASE; //first round rules don't apply.
@@ -269,8 +325,6 @@ class GameHandler {
 
     applyCardEffect(playedCard, onPlayer, onCards) {
         var card = playedCard;
-        console.log("playedCard", card.elementId, card.cardId);
-        console.log("onCards", onCards, onCards.length);
         switch (card.action) {
             //TODO a card that frees a virus
             case Constants.ACTION_CONTAIN_VIRUS:

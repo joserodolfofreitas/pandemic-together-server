@@ -14,6 +14,7 @@ class Card extends Schema {
     @type(["string"]) impactedElements = new ArraySchema<string>();
     @type("string") cardHolder: string;
     @type("boolean") contained: boolean;
+    @type("boolean") spreadedToNeighbours: boolean;
     @type("boolean") graveyard: boolean;
 
     constructor({cardId, elementId, type, name, description, action, maxTokensImpact = 0, maxCardsImpact = 0, impactedElements = []}) {
@@ -28,6 +29,7 @@ class Card extends Schema {
         this.maxTokensImpact = maxTokensImpact;
         this.maxCardsImpact = maxCardsImpact;
         this.contained = false;
+        this.spreadedToNeighbours = false;
         this.graveyard = false;
 
         for (var i = 0; i < impactedElements.length; i++) {
