@@ -120,7 +120,7 @@ class GameHandler {
                     if (player.virusField.length > 0) {
                         var onCards = new ArraySchema<Card>();
 
-                        for (var i = 0; i < advantage.maxImpactPerElement; i++) {
+                        for (var i = 0; i < advantage.maxTokensImpact; i++) {
                             var index = Math.floor(Math.random() * player.virusField.length); // TODO verify non repeating index
                             onCards.push(player.virusField[index]);
                         }
@@ -251,7 +251,7 @@ class GameHandler {
                 onCards.map(onCard => {
                     console.log("apply card effect", card.cardId, onCard.cardId);
                     var onVirus = onPlayer.virusField.filter(card => card.cardId == onCard.cardId)[0];
-                    onVirus.tokens -= card.maxImpactPerElement;
+                    onVirus.tokens -= card.maxTokensImpact;
                     if (onVirus.tokens < 1) {
                         //onPlayer.virusField = onPlayer.virusField.filter(card => card.cardId != onCard.cardId);
                         onVirus.graveyard = true;

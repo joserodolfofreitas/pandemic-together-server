@@ -10,7 +10,8 @@ export const GameElements = {
             name: "Virus",
             description: "Infections Killing Virus initial stage",
             action: Constants.ACTION_INCREMENT_VIRUS_TOKEN,
-            increment: 1
+            maxTokensImpact: 1,
+            maxCardsImpact: 1,
         },
         {
             elementId: "R1",
@@ -18,7 +19,8 @@ export const GameElements = {
             name: "Social Distancing",
             description: "Prevent a virus card to increment tokens",
             action: Constants.ACTION_CONTAIN_VIRUS,
-            maxImpactPerElement: 1,
+            maxTokensImpact: 0,
+            maxCardsImpact: 1,
             impactedElements: ["VIRUS1"],
         },
         {
@@ -27,7 +29,8 @@ export const GameElements = {
             name: "Quarantine/Lockdown",
             description: "Prevent 3 virus cards to increment tokens",
             action: Constants.ACTION_CONTAIN_VIRUS,
-            maxImpactPerElement: 3,
+            maxTokensImpact: 0,
+            maxCardsImpact: 3,
             impactedElements: ["VIRUS1"],
         },
         {
@@ -36,7 +39,8 @@ export const GameElements = {
             name: "Masks and Ventilators",
             description: "destroy one virus token",
             action: Constants.ACTION_DESTROY_VIRUS_TOKEN,
-            maxImpactPerElement: 1,
+            maxTokensImpact: 1,
+            maxCardsImpact: 1,
             impactedElements: ["VIRUS1"],
         },
         {
@@ -45,7 +49,8 @@ export const GameElements = {
             name: "Medics",
             description: "destroy three virus token",
             action: Constants.ACTION_DESTROY_VIRUS_TOKEN,
-            maxImpactPerElement: 3,
+            maxTokensImpact: 3,
+            maxCardsImpact: 1,
             impactedElements: ["VIRUS1"],
         },
         {
@@ -54,7 +59,8 @@ export const GameElements = {
             name: "Educated Population",
             description: "Each round prevents a virus card to increment token",
             action: Constants.ACTION_CONTAIN_VIRUS,
-            maxImpactPerElement: 1,
+            maxTokensImpact: 0,
+            maxCardsImpact: 1,
             impactedElements: ["VIRUS1"],
         },
         {
@@ -63,7 +69,8 @@ export const GameElements = {
             name: "Public Health System",
             description: "Each round prevents three virus cards to increment token",
             action: Constants.ACTION_CONTAIN_VIRUS,
-            maxImpactPerElement: 3,
+            maxTokensImpact: 0,
+            maxCardsImpact: 3,
             impactedElements: ["VIRUS1"],
         },
         {
@@ -72,7 +79,8 @@ export const GameElements = {
             name: "Advanced Research Labs",
             description: "Each round destroys a virus card token",
             action: Constants.ACTION_DESTROY_VIRUS_TOKEN,
-            maxImpactPerElement: 1,
+            maxTokensImpact: 1,
+            maxCardsImpact: 1,
             impactedElements: ["VIRUS1"],
         },
         {
@@ -81,6 +89,8 @@ export const GameElements = {
             name: "Safe ports",
             description: "Cant get infected by neighbohrs.",
             action: Constants.ACTION_PREVENT_FROM_NEIGHBOR_INFECTION,
+            maxTokensImpact: 0,
+            maxCardsImpact: 0,
         },
         {
             elementId: "D1",
@@ -88,7 +98,8 @@ export const GameElements = {
             name: "Social Ignorance",
             description: "Each round increments a token to a virus card",
             action: Constants.ACTION_INCREMENT_VIRUS_TOKEN,
-            maxImpactPerElement: 1,
+            maxTokensImpact: 1,
+            maxCardsImpact: 1,
             impactedElements: ["VIRUS1"],
         },
         {
@@ -97,7 +108,8 @@ export const GameElements = {
             name: "Slums",
             description: "Each round increments two tokens to a virus card",
             action: Constants.ACTION_INCREMENT_VIRUS_TOKEN,
-            maxImpactPerElement: 2,
+            maxTokensImpact: 2,
+            maxCardsImpact: 1,
             impactedElements: ["VIRUS1"],
         },
         {
@@ -106,7 +118,8 @@ export const GameElements = {
             name: "Fighiting Narratives",
             description: "Each round increments a token in three virus card",
             action: Constants.ACTION_INCREMENT_VIRUS_TOKEN_CARD,
-            maxImpactPerElement: 3,
+            maxTokensImpact: 1,
+            maxCardsImpact: 3,
             impactedElements: ["VIRUS1"],
         },
         {
@@ -115,7 +128,8 @@ export const GameElements = {
             name: "Overloaded hospitals",
             description: "Nullify Advantage Card 2 and Resource Card 4 takes no effect",
             action: Constants.ACTION_PREVENT_RESOURCE,
-            maxImpactPerElement: 1,
+            maxTokensImpact: 0,
+            maxCardsImpact: 0,
             impactedElements: ["A2", "R4"],
         },
     ],

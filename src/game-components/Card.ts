@@ -9,13 +9,14 @@ class Card extends Schema {
     @type("string") description: string;
     @type("string") action: string;
     @type("number") tokens: number;
-    @type("number") maxImpactPerElement: number;
+    @type("number") maxTokensImpact: number;
+    @type("number") maxCardsImpact: number;
     @type(["string"]) impactedElements = new ArraySchema<string>();
     @type("string") cardHolder: string;
     @type("boolean") contained: boolean;
     @type("boolean") graveyard: boolean;
 
-    constructor({cardId, elementId, type, name, description, action, maxImpactPerElement = 0, impactedElements = []}) {
+    constructor({cardId, elementId, type, name, description, action, maxTokensImpact = 0, maxCardsImpact = 0, impactedElements = []}) {
         super();
         this.cardId = cardId;
         this.elementId = elementId;
@@ -24,7 +25,8 @@ class Card extends Schema {
         this.description = description;
         this.action = action;
         this.tokens = (type == Constants.CARD_TYPE_VIRUS)? 1 : 0;
-        this.maxImpactPerElement = maxImpactPerElement;
+        this.maxTokensImpact = maxTokensImpact;
+        this.maxCardsImpact = maxCardsImpact;
         this.contained = false;
         this.graveyard = false;
 
