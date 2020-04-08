@@ -3,6 +3,7 @@ import * as Constants from "../common/constants";
 import * as DeckFunctions from "./DeckFunctions";
 import Card from "./Card";
 import Player from "./Player";
+import apply = Reflect.apply;
 
 
 class NewRoundMessage extends Schema {
@@ -40,7 +41,6 @@ class GameHandler {
     }
 
     setMainDeck() {
-
         var tempArray = DeckFunctions.getShuffledMainDeck(this.state.numberOfPlayers);
         this.state.numberOfVirus = tempArray.filter(function (card) {
             return card.type == Constants.CARD_TYPE_VIRUS;
@@ -108,6 +108,73 @@ class GameHandler {
         }
     }
 
+    applyCharacterEffects (player, cardsArray, counterCardsArray) {
+        cardsArray.map((card) => {
+            const nullifiedBy = counterCardsArray.filter(counterCard => counterCard.action == Constants.ACTION_PREVENT_CARD_ACTION && counterCard.impactedElements.includes(card.elementId));
+            if (nullifiedBy != undefined && nullifiedBy.length > 0) {
+                var newRoundMessage = new NewRoundMessage();
+                newRoundMessage.type = card.type;
+                newRoundMessage.playerId = player.sessionId;
+                newRoundMessage.cardSrc = card.cardId;
+                newRoundMessage.nullifiedBy = nullifiedBy[0].elementId;
+                this.state.newRoundMessages.push(newRoundMessage);
+            } else {
+                var onCards = new ArraySchema<Card>();
+
+
+                var openIndexes = [];
+                for (var i = 0; i < player.virusField.length; i++) {
+                    openIndexes.push(i);
+                }
+
+                for (var i = 0; i < card.maxCardsImpact && i < player.virusField.length; i++) {
+
+                    var noRepeatingIndex = Math.floor(Math.random() * openIndexes.length);
+                    console.log("noRepeatingIndex",noRepeatingIndex, player.name);
+                    var onCard = player.virusField[openIndexes[noRepeatingIndex]];
+                    console.log("card", card.elementId, card.cardId );
+                    console.log("onCard", onCard.elementId, onCard.cardId );
+                    onCards.push(onCard);
+                    openIndexes.splice(noRepeatingIndex, 1);
+                }
+
+                if (onCards.length > 0) {
+                    this.applyCardEffect(card, player, onCards);
+
+                    //create NewRoundMessage
+                    var onCardIds = new ArraySchema<string>();
+                    for (var j = 0; j < onCards.length; j++) {
+                        const card = onCards[j];
+                        onCardIds.push(card.cardId);
+                    }
+                    var newRoundMessage = new NewRoundMessage();
+                    newRoundMessage.type = card.type;
+                    newRoundMessage.action = card.action;
+                    newRoundMessage.playerId = player.sessionId;
+                    newRoundMessage.cardSrc = card.cardId;
+                    newRoundMessage.cardTargets = onCardIds;
+                    var virusTokenImpact;
+                    switch (card.type) {
+                        case Constants.ACTION_DESTROY_VIRUS_TOKEN:
+                            virusTokenImpact = "-" + card.maxTokensImpact;
+                            break;
+                        case Constants.ACTION_CONTAIN_VIRUS:
+                            virusTokenImpact = "0";
+                            break;
+                        case Constants.ACTION_INCREMENT_VIRUS_TOKEN:
+                            virusTokenImpact = "+" + card.maxTokensImpact;
+                            break;
+                        default:
+                            virusTokenImpact = "0";
+                            break;
+                    }
+                    newRoundMessage.virusTokenImpact = virusTokenImpact;
+                    this.state.newRoundMessages.push(newRoundMessage);
+                }
+            }
+            //TODO missing A4
+        });
+    }
     applyNewRoundRules() {
         console.log("next round");
         if (this.state.round > 0) {
@@ -115,71 +182,28 @@ class GameHandler {
 
             for (let id in this.state.players) {
                 var player = this.state.players[id];
-                //TODO apply disadvantages and advantages
-                player.advantages.map((advantage) => {
-                    const nullifiedBy = player.disadvantages.filter(card => card.action == Constants.ACTION_PREVENT_RESOURCE && card.impactedElements.includes(advantage.elementId));
-                    if (nullifiedBy != undefined && nullifiedBy.length > 0) {
-                        var newRoundMessage = new NewRoundMessage();
-                        newRoundMessage.type = advantage.type;
-                        newRoundMessage.playerId = player.sessionId;
-                        newRoundMessage.cardSrc = advantage.cardId;
-                        newRoundMessage.nullifiedBy = nullifiedBy[0].elementId;
-                        this.state.newRoundMessages.push(newRoundMessage);
-                        
-                    } else {
-                        if (player.virusField.length > 0) {
-                            var onCards = new ArraySchema<Card>();
+                console.log("newRound players card", player.name);
+                if (player.virusField.length > 0) {
+                    player.virusField.map((virus) => {
+                        if (!virus.contained) {
+                            this.applyCardEffect(virus, player, [virus]);
+                            let cardTargets = new ArraySchema<string>();
+                            cardTargets.push(virus.cardId);
 
-                            for (var i = 0; i < advantage.maxTokensImpact; i++) {
-                                var index = Math.floor(Math.random() * player.virusField.length); // TODO verify non repeating index
-                                onCards.push(player.virusField[index]);
-                            }
-
-                            if (onCards.length > 0) {
-                                this.applyCardEffect(advantage, player, onCards);
-
-                                var onCardIds = new ArraySchema<string>();
-                                for (var j = 0; j < onCards.length; j++) {
-                                    const card = onCards[j];
-                                    onCardIds.push(card.cardId);
-                                }
-
-                                var newRoundMessage = new NewRoundMessage();
-                                newRoundMessage.type = advantage.type;
-                                newRoundMessage.action = advantage.action;
-                                newRoundMessage.playerId = player.sessionId;
-                                newRoundMessage.cardSrc = advantage.cardId;
-                                newRoundMessage.cardTargets = onCardIds;
-                                newRoundMessage.virusTokenImpact = (advantage.type == Constants.ACTION_DESTROY_VIRUS_TOKEN) ? "+1" : "0";
-                                this.state.newRoundMessages.push(newRoundMessage);
-                            }
+                            var newRoundMessage = new NewRoundMessage();
+                            newRoundMessage.type = virus.type;
+                            newRoundMessage.action = virus.action;
+                            newRoundMessage.playerId = player.sessionId;
+                            newRoundMessage.cardTargets = cardTargets
+                            newRoundMessage.virusTokenImpact = "+" + virus.maxTokensImpact;
+                            this.state.newRoundMessages.push(newRoundMessage);
                         }
+                    });
 
-
-                        //TODO missing A4
-                    }
-                });
-
-                player.disadvantages.map((disadvantage) => {
-
-                });
-
-                player.virusField.map((virus) => {
-                    if (!virus.contained) {
-                        virus.tokens++;
-                        let cardTargets = new ArraySchema<string>();
-                        cardTargets.push(virus.cardId);
-
-                        var newRoundMessage = new NewRoundMessage();
-                        newRoundMessage.type = virus.type;
-                        newRoundMessage.action = virus.action;
-                        newRoundMessage.playerId = player.sessionId;
-                        newRoundMessage.cardTargets = cardTargets
-                        newRoundMessage.virusTokenImpact = "+1";
-                        this.state.newRoundMessages.push(newRoundMessage);
-                    }
-                });
-
+                    //third parameter is the counterCardsArray
+                    this.applyCharacterEffects(player, player.advantages, player.disadvantages); //apply common advantages
+                    this.applyCharacterEffects(player, player.disadvantages, player.advantages); //apply common disadvantages
+                }
             }
 
 
@@ -243,16 +267,20 @@ class GameHandler {
         this.setupNewGameState();
     }
 
-    applyCardEffect(card, onPlayer, onCards) {
+    applyCardEffect(playedCard, onPlayer, onCards) {
+        var card = playedCard;
+        console.log("playedCard", card.elementId, card.cardId);
+        console.log("onCards", onCards, onCards.length);
         switch (card.action) {
+            //TODO a card that frees a virus
             case Constants.ACTION_CONTAIN_VIRUS:
                 onCards.map(onCard => {
+                    console.log("apply ACTION_CONTAIN_VIRUS effect =>", card.elementId,  card.cardId, " on ", onCard.elementId, onCard.cardId);
                     for (var i = 0; i < onPlayer.virusField.length; i++) {
-                        var card = onPlayer.virusField[i];
-
-                        if (card.cardId == onCard.cardId) {
-                            card.contained = true;
-                            onPlayer.virusField[i] = card;
+                        var virus = onPlayer.virusField[i];
+                        if (virus.cardId == onCard.cardId) {
+                            virus.contained = true;
+                            onPlayer.virusField[i] = virus;
                         }
                     }
                 });
@@ -260,7 +288,7 @@ class GameHandler {
                 break;
             case Constants.ACTION_DESTROY_VIRUS_TOKEN:
                 onCards.map(onCard => {
-                    console.log("apply card effect", card.cardId, onCard.cardId);
+                    console.log("apply ACTION_DESTROY_VIRUS_TOKEN effect =>", card.elementId,  card.cardId, " on ", onCard.elementId ,onCard.cardId);
                     var onVirus = onPlayer.virusField.filter(card => card.cardId == onCard.cardId)[0];
                     onVirus.tokens -= card.maxTokensImpact;
                     if (onVirus.tokens < 1) {
@@ -274,15 +302,12 @@ class GameHandler {
                 });
 
                 break;
-
             case Constants.ACTION_INCREMENT_VIRUS_TOKEN:
-                break;
-            case Constants.ACTION_INCREMENT_VIRUS_TOKEN_CARD:
-                break;
-
-            case Constants.ACTION_PREVENT_FROM_NEIGHBOR_INFECTION:
-                break;
-            case Constants.ACTION_PREVENT_RESOURCE:
+                onCards.map(onCard => {
+                    console.log("apply ACTION_INCREMENT_VIRUS_TOKEN effect =>", card.elementId, card.cardId, " on ", onCard.elementId, onCard.cardId);
+                    var onVirus = onPlayer.virusField.filter(card => card.cardId == onCard.cardId)[0];
+                    onVirus.tokens += card.maxTokensImpact;
+                });
                 break;
 
             default:
