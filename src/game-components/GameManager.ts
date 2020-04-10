@@ -226,7 +226,6 @@ class GameHandler {
                     this.state.newRoundMessages.push(newRoundMessage);
                 }
             }
-            //TODO missing A4
         });
     }
     applyNewRoundRules() {
