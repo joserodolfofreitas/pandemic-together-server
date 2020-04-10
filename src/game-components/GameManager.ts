@@ -27,7 +27,7 @@ class State extends Schema {
     @type([ NewRoundMessage ]) newRoundMessages = new ArraySchema<NewRoundMessage>();
     @type({ map: Player }) players = new MapSchema();
     @type([ Card ]) deck = new ArraySchema<Card>();
-    @type([ Card ]) cardGraveyard = new ArraySchema<Card>();
+    //@type([ Card ]) cardGraveyard = new ArraySchema<Card>(); // maybe we'll need a graveyard;
     @type([ Card ]) disadvantagesDeck = new ArraySchema<Card>();
     @type([ Card ]) advantagesDeck = new ArraySchema<Card>();
 }
@@ -346,8 +346,8 @@ class GameHandler {
                     var onVirus = onPlayer.virusField.filter(card => card.cardId == onCard.cardId)[0];
                     onVirus.tokens -= card.maxTokensImpact;
                     if (onVirus.tokens < 1) {
-                        //onPlayer.virusField = onPlayer.virusField.filter(card => card.cardId != onCard.cardId);
-                        onVirus.graveyard = true;
+                        onPlayer.virusField = onPlayer.virusField.filter(card => card.cardId != onCard.cardId);
+                        onVirus = null; //.graveyard = true;
                         this.state.numberOfVirus = this.state.numberOfVirus - 1;
                         if (this.state.numberOfVirus == 0) {
                             this.state.gameState = Constants.GAME_STATE_VICTORY_END;
@@ -390,8 +390,8 @@ class GameHandler {
         });
 
         this.applyCardEffect(cardPlayed, onPlayer, onCards);
-        //player.hand = player.hand.filter(card => card.cardId != cardPlayed.cardId); //remove card from hand
-        cardPlayed.graveyard = true;
+        player.hand = player.hand.filter(card => card.cardId != cardPlayed.cardId); //remove card from hand
+        //cardPlayed.graveyard = true;
         this.nextTurn();
     }
 
