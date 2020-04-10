@@ -84,6 +84,18 @@ class GameHandler {
         }
     };
     checkGameOverCondition() {
+
+        //condition 1. No player has more virus than MAX_VIRUS_CARD_PER_PLAYER
+        for (let id in this.state.players) {
+            const player = this.state.players[id];
+            if (player.virusField.length > Constants.MAX_VIRUS_CARD_PER_PLAYER) {
+                this.state.gameState = Constants.GAME_STATE_OVER;
+                return;
+            }
+
+        }
+
+        //condition 2. If deck is empty and players can't win the game anymore.
         if (this.state.deck.length == 0) {
             var remainingTokens = 0;
             var remainingActionAgainstTokens = 0;
@@ -288,7 +300,7 @@ class GameHandler {
 
 
             this.applyVirusSpread();
-
+            this.checkGameOverCondition();
             this.state.roundState = Constants.ROUND_STATE_VIRUS_PHASE;
         } else {
             this.state.roundState = Constants.ROUND_STATE_PLAYERS_PHASE; //first round rules don't apply.
