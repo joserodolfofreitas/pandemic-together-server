@@ -78,10 +78,37 @@ class GameHandler {
         this.setDisadvantagesDeck();
         this.setAdvantagesDeck();
     }
+    checkVictoryCondition() {
+        if (this.state.numberOfVirus == 0) {
+            this.state.gameState = Constants.GAME_STATE_VICTORY_END;
+        }
+    };
+    checkGameOverCondition() {
+        if (this.state.deck.length == 0) {
+            var remainingTokens = 0;
+            var remainingActionAgainstTokens = 0;
+            for (let id in this.state.players) {
+                const player = this.state.players[id];
+                player.virusField.map((virus) => {
+                    remainingTokens += virus.tokens;
+                });
+                player.hand.map((resource) => {
+                   if (resource.action == Constants.ACTION_DESTROY_VIRUS_TOKEN) {
+                       remainingActionAgainstTokens += resource.maxTokensImpact;
+                   }
+                });
+            }
+
+            if (remainingTokens > remainingActionAgainstTokens) {
+                this.state.gameState = Constants.GAME_STATE_OVER;
+            }
+        }
+    }
 
     drawCardForPlayer(player) {
         if (this.state.deck.length == 0) {
             console.log("deck empty");
+            this.checkGameOverCondition();
             return;
         }
         var cardDeck = this.state.deck.pop();
@@ -348,9 +375,7 @@ class GameHandler {
                         onPlayer.virusField = onPlayer.virusField.filter(card => card.cardId != onCard.cardId);
                         onVirus = null; //.graveyard = true;
                         this.state.numberOfVirus = this.state.numberOfVirus - 1;
-                        if (this.state.numberOfVirus == 0) {
-                            this.state.gameState = Constants.GAME_STATE_VICTORY_END;
-                        }
+                        this.checkVictoryCondition();
                     }
                 });
 
@@ -367,6 +392,8 @@ class GameHandler {
                 break;
         }
     }
+
+
 
     playerPlays(playMessage) {
         var player = this.state.players[playMessage.player];
