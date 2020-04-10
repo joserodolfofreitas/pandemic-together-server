@@ -170,6 +170,7 @@ class GameHandler {
             newRoundMessage.playerSrc = virusSrc.cardHolder.sessionId;
             newRoundMessage.cardSrc = virusSrc.cardId;
             newRoundMessage.cardTargets.push(card.cardId);
+            this.state.numberOfVirus = this.state.numberOfVirus + 1;
         }
 
         this.state.newRoundMessages.push(newRoundMessage);
