@@ -5,16 +5,16 @@ import * as Constants from "../common/constants";
 import * as DeckFunctions from "../game-components/DeckFunctions";
 import Card from "../game-components/Card";
 import Player from "../game-components/Player";
-import GameHandler from "../game-components/GameManager";
+import GameManager from "../game-components/GameManager";
 
 export class PandemicTogetherRoom extends Room {
 
-  gameHandler = new GameHandler()
+  gameManager = new GameManager()
 
   onCreate (options: any) {
     this.maxClients = 4;
-    this.setState(this.gameHandler.state);
-    this.gameHandler.setupNewGameState();
+    this.setState(this.gameManager.state);
+    this.gameManager.setupNewGameState();
   }
 
   onJoin (client: Client, options: any) {
@@ -31,22 +31,21 @@ export class PandemicTogetherRoom extends Room {
 
     switch (message.type) {
       case Constants.GM_NEXT_TURN:
-        this.state.currentTurn = this.state.currentTurn + 1;
         break;
       case Constants.GM_DRAW_CARD:
         break;
       case Constants.GM_PLAY_CARD:
-        this.gameHandler.playerPlays(message);
+        this.gameManager.playerPlays(message);
         break;
       case Constants.GM_START_GAME:
-        this.gameHandler.startNewGame();
+        this.gameManager.startNewGame();
         this.lock();
         break;
       case Constants.GM_ADVANCE_TURN:
-        this.gameHandler.nextTurn();
+        this.gameManager.nextTurn();
         break;
       case Constants.GM_END_NEW_ROUND_ANIMATIONS:
-        this.gameHandler.moveRoundToPlayersPhase(message.playerId);
+        this.gameManager.moveRoundToPlayersPhase(message.playerId);
         break;
       case Constants.GM_CHAT_MESSAGE:
         break;
@@ -64,7 +63,7 @@ export class PandemicTogetherRoom extends Room {
     //game over
     this.unlock();
     this.broadcast({type: "SERVER_MESSAGE", action: "GAME_OVER", reason: client.sessionId + " left"});
-    this.gameHandler.resetGame(); //keep room
+    this.gameManager.resetGame(); //keep room
 
   }
 
