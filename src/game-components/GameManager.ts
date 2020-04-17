@@ -268,77 +268,81 @@ class GameHandler {
             }
         });
     }
-    applyNewRoundRules() {
-        console.log("next round");
-        if (this.state.round > 0) {
-            this.state.newRoundMessages = new ArraySchema<NewRoundMessage>();
+    applyEndRoundRules() {
+        console.log("end round");
 
-            for (let id in this.state.players) {
-                var player = this.state.players[id];
-                console.log("newRound players card", player.name);
-                if (player.virusField.length > 0) {
-                    player.virusField.map((virus) => {
-                        if (!virus.contained) {
-                            this.applyCardEffect(virus, player, [virus]);
-                            let cardTargets = new ArraySchema<string>();
-                            cardTargets.push(virus.cardId);
+        this.state.newRoundMessages = new ArraySchema<NewRoundMessage>();
 
-                            var newRoundMessage = new NewRoundMessage();
-                            newRoundMessage.type = virus.type;
-                            newRoundMessage.action = virus.action;
-                            newRoundMessage.playerId = player.sessionId;
-                            newRoundMessage.cardTargets = cardTargets
-                            newRoundMessage.virusTokenImpact = "+" + virus.maxTokensImpact;
-                            this.state.newRoundMessages.push(newRoundMessage);
-                        }
-                    });
+        for (let id in this.state.players) {
+            var player = this.state.players[id];
+            console.log("newRound players card", player.name);
+            if (player.virusField.length > 0) {
+                player.virusField.map((virus) => {
+                    if (!virus.contained) {
+                        this.applyCardEffect(virus, player, [virus]);
+                        let cardTargets = new ArraySchema<string>();
+                        cardTargets.push(virus.cardId);
 
-                    //third parameter is the counterCardsArray
-                    this.applyCharacterEffects(player, player.advantages, player.disadvantages); //apply common advantages
-                    this.applyCharacterEffects(player, player.disadvantages, player.advantages); //apply common disadvantages
-                }
+                        var newRoundMessage = new NewRoundMessage();
+                        newRoundMessage.type = virus.type;
+                        newRoundMessage.action = virus.action;
+                        newRoundMessage.playerId = player.sessionId;
+                        newRoundMessage.cardTargets = cardTargets
+                        newRoundMessage.virusTokenImpact = "+" + virus.maxTokensImpact;
+                        this.state.newRoundMessages.push(newRoundMessage);
+                    }
+                });
+
+                //third parameter is the counterCardsArray
+                this.applyCharacterEffects(player, player.advantages, player.disadvantages); //apply common advantages
+                this.applyCharacterEffects(player, player.disadvantages, player.advantages); //apply common disadvantages
             }
-
-
-            this.applyVirusSpread();
-            this.checkGameOverCondition();
-            this.state.roundState = Constants.ROUND_STATE_VIRUS_PHASE;
-        } else {
-            this.state.roundState = Constants.ROUND_STATE_PLAYERS_PHASE; //first round rules don't apply.
         }
-        this.state.round = this.state.round + 1;
 
+
+        this.applyVirusSpread();
+        this.checkGameOverCondition();
+        this.state.roundState = Constants.ROUND_STATE_VIRUS_PHASE;
     }
 
     nextTurn() {
         console.log("next turn");
         const playerIds = Object.keys(this.state.players);
-        if (this.state.currentTurn == "") {
+        if (this.state.currentTurn == "" || this.state.currentTurn == null) {
+            this.state.roundState = Constants.ROUND_STATE_PLAYERS_PHASE;
+            this.state.round = this.state.round + 1;
             this.state.currentTurn = playerIds[0];
-            this.applyNewRoundRules();
+            this.drawCardForPlayer(this.state.players[this.state.currentTurn]);
         } else {
             for (var i = 0; i < playerIds.length; i++) {
                 const id = playerIds[i];
                 if (this.state.currentTurn == id) {
                     var newTurnIndex = (i + 1 == playerIds.length) ? 0 : i + 1;
                     if (newTurnIndex == 0) {
-                        this.applyNewRoundRules();
+                        this.applyEndRoundRules();
+                        this.state.currentTurn = "";
+                    } else {
+                        this.state.currentTurn = playerIds[newTurnIndex];
+                        this.drawCardForPlayer(this.state.players[this.state.currentTurn]);
                     }
-                    this.state.currentTurn = playerIds[newTurnIndex];
                     break;
                 }
             }
         }
-        this.drawCardForPlayer(this.state.players[this.state.currentTurn]);
+
     }
 
     moveRoundToPlayersPhase(playerId) {
+        console.log("moveRoundToPlayersPhase", playerId);
         if (!this.playersThatEndedNewRoundAnimations.includes(playerId)) {
             this.playersThatEndedNewRoundAnimations.push(playerId);
         }
         if (this.playersThatEndedNewRoundAnimations.length == this.state.numberOfPlayers) {
             this.playersThatEndedNewRoundAnimations = [];
-            this.state.roundState = Constants.ROUND_STATE_PLAYERS_PHASE;
+            this.nextTurn(); //move to players phase.
+            /*this.state.roundState = Constants.ROUND_STATE_PLAYERS_PHASE;
+            const playerIds = Object.keys(this.state.players);
+            this.state.currentTurn = playerIds[0];*/
         }
     }
 
