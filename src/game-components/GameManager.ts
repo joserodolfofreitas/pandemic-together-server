@@ -306,30 +306,31 @@ class GameHandler {
     }
 
     nextTurn() {
-        console.log("next turn");
-        const playerIds = Object.keys(this.state.players);
-        if (this.state.currentTurn == "" || this.state.currentTurn == null) {
-            this.state.roundState = Constants.ROUND_STATE_PLAYERS_PHASE;
-            this.state.round = this.state.round + 1;
-            this.state.currentTurn = playerIds[0];
-            this.drawCardForPlayer(this.state.players[this.state.currentTurn]);
-        } else {
-            for (var i = 0; i < playerIds.length; i++) {
-                const id = playerIds[i];
-                if (this.state.currentTurn == id) {
-                    var newTurnIndex = (i + 1 == playerIds.length) ? 0 : i + 1;
-                    if (newTurnIndex == 0) {
-                        this.applyEndRoundRules();
-                        this.state.currentTurn = "";
-                    } else {
-                        this.state.currentTurn = playerIds[newTurnIndex];
-                        this.drawCardForPlayer(this.state.players[this.state.currentTurn]);
+        if (this.state.gameState != Constants.GAME_STATE_OVER) {
+            console.log("next turn");
+            const playerIds = Object.keys(this.state.players);
+            if (this.state.currentTurn == "" || this.state.currentTurn == null) {
+                this.state.roundState = Constants.ROUND_STATE_PLAYERS_PHASE;
+                this.state.round = this.state.round + 1;
+                this.state.currentTurn = playerIds[0];
+                this.drawCardForPlayer(this.state.players[this.state.currentTurn]);
+            } else {
+                for (var i = 0; i < playerIds.length; i++) {
+                    const id = playerIds[i];
+                    if (this.state.currentTurn == id) {
+                        var newTurnIndex = (i + 1 == playerIds.length) ? 0 : i + 1;
+                        if (newTurnIndex == 0) {
+                            this.applyEndRoundRules();
+                            this.state.currentTurn = "";
+                        } else {
+                            this.state.currentTurn = playerIds[newTurnIndex];
+                            this.drawCardForPlayer(this.state.players[this.state.currentTurn]);
+                        }
+                        break;
                     }
-                    break;
                 }
             }
         }
-
     }
 
     moveRoundToPlayersPhase(playerId) {
@@ -347,11 +348,13 @@ class GameHandler {
     }
 
     startNewGame() {
-        this.setupDecks();
-        this.setPlayersInitialHands();
-        this.state.gameState = Constants.GAME_STATE_STARTED;
-        this.state.roundState = Constants.ROUND_STATE_INITIAL_DRAW; //in case we ever need to do some animations at the beginning of the game.
-        this.nextTurn();
+        if (Object.keys(this.state.players).length >= 3) {
+            this.setupDecks();
+            this.setPlayersInitialHands();
+            this.state.gameState = Constants.GAME_STATE_STARTED;
+            this.state.roundState = Constants.ROUND_STATE_INITIAL_DRAW; //in case we ever need to do some animations at the beginning of the game.
+            this.nextTurn();
+        }
     }
 
     resetGame() {
@@ -413,29 +416,31 @@ class GameHandler {
 
 
     playerPlays(playMessage) {
-        var player = this.state.players[playMessage.player];
-        var onPlayer = this.state.players[playMessage.onPlayer];
+        if (this.state.gameState != Constants.GAME_STATE_OVER) {
+            var player = this.state.players[playMessage.player];
+            var onPlayer = this.state.players[playMessage.onPlayer];
 
-        var cardPlayed = player.hand.filter(card => card.cardId == playMessage.cardPlayed.cardId)[0]; //playMessage.cardPlayed;
+            var cardPlayed = player.hand.filter(card => card.cardId == playMessage.cardPlayed.cardId)[0]; //playMessage.cardPlayed;
 
-        if (cardPlayed == undefined) {
-            throw new Error("CardPlayed not found on server");
-        }
-
-        const onCards = onPlayer.virusField.filter(card => {
-            for (var i = 0; i < playMessage.onCardIds.length; i++) {
-                var cardId = playMessage.onCardIds[i];
-                if (card.cardId == cardId) {
-                    return true;
-                }
+            if (cardPlayed == undefined) {
+                throw new Error("CardPlayed not found on server");
             }
-            return false;
-        });
 
-        this.applyCardEffect(cardPlayed, onPlayer, onCards);
-        player.hand = player.hand.filter(card => card.cardId != cardPlayed.cardId); //remove card from hand
-        //cardPlayed.graveyard = true;
-        this.nextTurn();
+            const onCards = onPlayer.virusField.filter(card => {
+                for (var i = 0; i < playMessage.onCardIds.length; i++) {
+                    var cardId = playMessage.onCardIds[i];
+                    if (card.cardId == cardId) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+            this.applyCardEffect(cardPlayed, onPlayer, onCards);
+            player.hand = player.hand.filter(card => card.cardId != cardPlayed.cardId); //remove card from hand
+            //cardPlayed.graveyard = true;
+            this.nextTurn();
+        }
     }
 
     setupNewGameState() {
