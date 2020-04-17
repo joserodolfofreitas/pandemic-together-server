@@ -348,11 +348,13 @@ class GameHandler {
     }
 
     startNewGame() {
-        this.setupDecks();
-        this.setPlayersInitialHands();
-        this.state.gameState = Constants.GAME_STATE_STARTED;
-        this.state.roundState = Constants.ROUND_STATE_INITIAL_DRAW; //in case we ever need to do some animations at the beginning of the game.
-        this.nextTurn();
+        if (Object.keys(this.state.players).length >= 3) {
+            this.setupDecks();
+            this.setPlayersInitialHands();
+            this.state.gameState = Constants.GAME_STATE_STARTED;
+            this.state.roundState = Constants.ROUND_STATE_INITIAL_DRAW; //in case we ever need to do some animations at the beginning of the game.
+            this.nextTurn();
+        }
     }
 
     resetGame() {
