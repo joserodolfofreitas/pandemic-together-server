@@ -22,10 +22,7 @@ function shuffle(array) {
 
 export function getShuffledMainDeck(numberOfPlayers) {
     var virusCard = GameElements.cards[0];
-    var resourceCards =  GameElements.cards.filter(function(card) {
-        return card.type == Constants.CARD_TYPE_RESOURCE;
-    });
-
+    var resourceCards =  GameElements.cards.filter(card => card.type == Constants.CARD_TYPE_RESOURCE);
 
 
     var deck = [];

@@ -1,7 +1,6 @@
 import { Room, Client } from "colyseus";
 import { Schema, ArraySchema, MapSchema, type } from "@colyseus/schema";
 import Player from "../game-components/Player";
-import GameHandler from "../game-components/GameHandler";
 
 class LobbyState extends Schema {
     @type("uint8") numberOfPlayers: number;

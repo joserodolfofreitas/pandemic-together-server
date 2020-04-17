@@ -5,7 +5,7 @@ import * as Constants from "../common/constants";
 import * as DeckFunctions from "../game-components/DeckFunctions";
 import Card from "../game-components/Card";
 import Player from "../game-components/Player";
-import GameHandler from "../game-components/GameHandler";
+import GameHandler from "../game-components/GameManager";
 
 export class PandemicTogetherRoom extends Room {
 
@@ -44,6 +44,9 @@ export class PandemicTogetherRoom extends Room {
         break;
       case Constants.GM_ADVANCE_TURN:
         this.gameHandler.nextTurn();
+        break;
+      case Constants.GM_END_NEW_ROUND_ANIMATIONS:
+        this.gameHandler.moveRoundToPlayersPhase(message.playerId);
         break;
       case Constants.GM_CHAT_MESSAGE:
         break;
