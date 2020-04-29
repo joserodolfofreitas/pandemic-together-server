@@ -27,33 +27,33 @@ export class PandemicTogetherRoom extends Room {
   }
 
   onMessage (client: Client, message: any) {
-    console.log(client.sessionId + " message " + message);
-
-    switch (message.type) {
-      case Constants.GM_NEXT_TURN:
-        break;
-      case Constants.GM_DRAW_CARD:
-        break;
-      case Constants.GM_PLAY_CARD:
-        this.gameManager.playerPlays(message);
-        break;
-      case Constants.GM_START_GAME:
-        this.gameManager.startNewGame();
-        this.lock();
-        break;
-      case Constants.GM_ADVANCE_TURN:
-        this.gameManager.nextTurn();
-        break;
-      case Constants.GM_END_NEW_ROUND_ANIMATIONS:
-        this.gameManager.moveRoundToPlayersPhase(message.playerId);
-        break;
-      case Constants.GM_CHAT_MESSAGE:
-        this.broadcast(message);
-        break;
-    }
-
-    //this.broadcast(message);
-
+      try {
+          switch (message.type) {
+            case Constants.GM_NEXT_TURN:
+              break;
+            case Constants.GM_DRAW_CARD:
+              break;
+            case Constants.GM_PLAY_CARD:
+              this.gameManager.playerPlays(message);
+              break;
+            case Constants.GM_START_GAME:
+              this.gameManager.startNewGame();
+              this.lock();
+              break;
+            case Constants.GM_ADVANCE_TURN:
+              this.gameManager.nextTurn();
+              break;
+            case Constants.GM_END_NEW_ROUND_ANIMATIONS:
+              this.gameManager.moveRoundToPlayersPhase(message.playerId);
+              break;
+            case Constants.GM_CHAT_MESSAGE:
+              this.broadcast(message);
+              break;
+          }
+      } catch (err) {
+        console.log("Error catched", err.message);
+        this.broadcast({type: Constants.SERVER_ERROR, message: err.message});
+      }
   }
 
   onLeave (client: Client, consented: boolean) {
