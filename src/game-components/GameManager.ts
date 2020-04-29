@@ -171,17 +171,6 @@ class GameHandler {
             endRoundMessage.playerSrc = virusSrc.cardHolder.sessionId;
             endRoundMessage.cardSrc = virusSrc.cardId;
             endRoundMessage.nullifiedBy = nullifiedBy[0].elementId;
-
-            /*this.state.newRoundMessages.push(endRoundMessage.clone()); // TODO remove this when client is ready
-
-            if (!this.state.endRoundNullifiedEffects[player.sessionId]) {
-                var endRoundNullifiedEffects = new EndRoundNullifiedEffects();
-                endRoundNullifiedEffects.playerId = player.sessionId;
-                this.state.endRoundNullifiedEffects[player.sessionId] = endRoundNullifiedEffects;
-            }
-            this.state.endRoundNullifiedEffects[player.sessionId].endRoundMessages.push(endRoundMessage)*/
-
-
         } else {
             var cardRef = GameElements.cards[0];
             var card = new Card(Object.assign(cardRef, {cardId : "cardUID_NBV_" + Date.now() + "__SRC__" + virusSrc.cardId}));
