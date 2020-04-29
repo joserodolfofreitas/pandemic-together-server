@@ -48,10 +48,11 @@ export class PandemicTogetherRoom extends Room {
         this.gameManager.moveRoundToPlayersPhase(message.playerId);
         break;
       case Constants.GM_CHAT_MESSAGE:
+        this.broadcast(message);
         break;
     }
 
-    this.broadcast(message);
+    //this.broadcast(message);
 
   }
 
