@@ -172,14 +172,14 @@ class GameHandler {
             endRoundMessage.cardSrc = virusSrc.cardId;
             endRoundMessage.nullifiedBy = nullifiedBy[0].elementId;
 
-            this.state.newRoundMessages.push(endRoundMessage.clone()); // TODO remove this when client is ready
+            /*this.state.newRoundMessages.push(endRoundMessage.clone()); // TODO remove this when client is ready
 
             if (!this.state.endRoundNullifiedEffects[player.sessionId]) {
                 var endRoundNullifiedEffects = new EndRoundNullifiedEffects();
                 endRoundNullifiedEffects.playerId = player.sessionId;
                 this.state.endRoundNullifiedEffects[player.sessionId] = endRoundNullifiedEffects;
             }
-            this.state.endRoundNullifiedEffects[player.sessionId].endRoundMessages.push(endRoundMessage)
+            this.state.endRoundNullifiedEffects[player.sessionId].endRoundMessages.push(endRoundMessage)*/
 
 
         } else {
@@ -194,16 +194,16 @@ class GameHandler {
             endRoundMessage.cardSrc = virusSrc.cardId;
             endRoundMessage.cardTargets.push(card.cardId);
             this.state.numberOfVirus = this.state.numberOfVirus + 1;
-
-            this.state.newRoundMessages.push(endRoundMessage.clone()); // TODO remove this when client is ready
-
-            if (!this.state.endRoundEffects[virusSrc.cardId]) {
-                var endRoundVirusEffects = new EndRoundVirusEffects();
-                endRoundVirusEffects.virusId = virusSrc.cardId;
-                this.state.endRoundEffects[virusSrc.cardId] = endRoundVirusEffects;
-            }
-            this.state.endRoundEffects[virusSrc.cardId].endRoundMessages.push(endRoundMessage)
         }
+
+        this.state.newRoundMessages.push(endRoundMessage.clone()); // TODO remove this when client is ready
+
+        if (!this.state.endRoundEffects[virusSrc.cardId]) {
+            var endRoundVirusEffects = new EndRoundVirusEffects();
+            endRoundVirusEffects.virusId = virusSrc.cardId;
+            this.state.endRoundEffects[virusSrc.cardId] = endRoundVirusEffects;
+        }
+        this.state.endRoundEffects[virusSrc.cardId].endRoundMessages.push(endRoundMessage)
     }
 
     applyVirusSpread () {
