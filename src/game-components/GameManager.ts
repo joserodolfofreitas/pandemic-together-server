@@ -6,7 +6,7 @@ import Player from "./Player";
 import { GameElements } from './GameElements'
 
 
-class NewRoundMessage extends Schema {
+class EndRoundMessage extends Schema {
     @type("string") type: string;
     @type("string") action: string;
     @type("string") nullifiedBy: string;
@@ -17,6 +17,16 @@ class NewRoundMessage extends Schema {
     @type("string") virusTokenImpact: string;
 }
 
+class EndRoundVirusEffects extends Schema {
+    @type("string") virusId: string;
+    @type([ EndRoundMessage ]) endRoundMessages = new ArraySchema<EndRoundMessage>();
+}
+
+class EndRoundNullifiedEffects extends Schema {
+    @type("string") playerId: string;
+    @type([ EndRoundMessage ]) endRoundMessages = new ArraySchema<EndRoundMessage>();
+}
+
 class State extends Schema {
     @type("string") gameState: string;
     @type("uint8") numberOfPlayers: number;
@@ -24,7 +34,9 @@ class State extends Schema {
     @type("uint8") numberOfVirus: number;
     @type("uint8") round: number;
     @type("string") roundState: string;
-    @type([ NewRoundMessage ]) newRoundMessages = new ArraySchema<NewRoundMessage>();
+    @type({ map: EndRoundVirusEffects }) endRoundEffects = new MapSchema();
+    @type({ map: EndRoundNullifiedEffects }) endRoundNullifiedEffects = new MapSchema();
+    @type([ EndRoundMessage ]) newRoundMessages = new ArraySchema<EndRoundMessage>(); //TODO remove this when client is ready.
     @type({ map: Player }) players = new MapSchema();
     @type([ Card ]) deck = new ArraySchema<Card>();
     //@type([ Card ]) cardGraveyard = new ArraySchema<Card>(); // maybe we'll need a graveyard;
@@ -150,30 +162,48 @@ class GameHandler {
 
     virusSpreadToPlayer(player, virusSrc) {
         const nullifiedBy = player.advantages.filter(counterCard => counterCard.action == Constants.ACTION_PREVENT_FROM_NEIGHBOR_INFECTION);
-        var newRoundMessage = new NewRoundMessage();
+        var endRoundMessage = new EndRoundMessage();
 
         if (nullifiedBy.length > 0) {
             console.log("spreadTo", player.name, "but it was nullified");
-            newRoundMessage.type = Constants.ACTION_NEIGHBOUR_INFECTION;
-            newRoundMessage.playerId = player.sessionId;
-            newRoundMessage.playerSrc = virusSrc.cardHolder.sessionId;
-            newRoundMessage.cardSrc = virusSrc.cardId;
-            newRoundMessage.nullifiedBy = nullifiedBy[0].elementId;
+            endRoundMessage.type = Constants.ACTION_NEIGHBOUR_INFECTION;
+            endRoundMessage.playerId = player.sessionId;
+            endRoundMessage.playerSrc = virusSrc.cardHolder.sessionId;
+            endRoundMessage.cardSrc = virusSrc.cardId;
+            endRoundMessage.nullifiedBy = nullifiedBy[0].elementId;
+
+            this.state.newRoundMessages.push(endRoundMessage.clone()); // TODO remove this when client is ready
+
+            if (!this.state.endRoundNullifiedEffects[player.sessionId]) {
+                var endRoundNullifiedEffects = new EndRoundNullifiedEffects();
+                endRoundNullifiedEffects.playerId = player.sessionId;
+                this.state.endRoundNullifiedEffects[player.sessionId] = endRoundNullifiedEffects;
+            }
+            this.state.endRoundNullifiedEffects[player.sessionId].endRoundMessages.push(endRoundMessage)
+
+
         } else {
             var cardRef = GameElements.cards[0];
             var card = new Card(Object.assign(cardRef, {cardId : "cardUID_NBV_" + Date.now() + "__SRC__" + virusSrc.cardId}));
             card.cardHolder = player.sessionId;
             player.virusField.push(card);
 
-            newRoundMessage.type = Constants.ACTION_NEIGHBOUR_INFECTION;
-            newRoundMessage.playerId = player.sessionId;
-            newRoundMessage.playerSrc = virusSrc.cardHolder.sessionId;
-            newRoundMessage.cardSrc = virusSrc.cardId;
-            newRoundMessage.cardTargets.push(card.cardId);
+            endRoundMessage.type = Constants.ACTION_NEIGHBOUR_INFECTION;
+            endRoundMessage.playerId = player.sessionId;
+            endRoundMessage.playerSrc = virusSrc.cardHolder.sessionId;
+            endRoundMessage.cardSrc = virusSrc.cardId;
+            endRoundMessage.cardTargets.push(card.cardId);
             this.state.numberOfVirus = this.state.numberOfVirus + 1;
-        }
 
-        this.state.newRoundMessages.push(newRoundMessage);
+            this.state.newRoundMessages.push(endRoundMessage.clone()); // TODO remove this when client is ready
+
+            if (!this.state.endRoundEffects[virusSrc.cardId]) {
+                var endRoundVirusEffects = new EndRoundVirusEffects();
+                endRoundVirusEffects.virusId = virusSrc.cardId;
+                this.state.endRoundEffects[virusSrc.cardId] = endRoundVirusEffects;
+            }
+            this.state.endRoundEffects[virusSrc.cardId].endRoundMessages.push(endRoundMessage)
+        }
     }
 
     applyVirusSpread () {
@@ -206,16 +236,22 @@ class GameHandler {
         cardsArray.map((card) => {
             const nullifiedBy = counterCardsArray.filter(counterCard => counterCard.action == Constants.ACTION_PREVENT_CARD_ACTION && counterCard.impactedElements.includes(card.elementId));
             if (nullifiedBy != undefined && nullifiedBy.length > 0) {
-                var newRoundMessage = new NewRoundMessage();
-                newRoundMessage.type = card.type;
-                newRoundMessage.playerId = player.sessionId;
-                newRoundMessage.cardSrc = card.cardId;
-                newRoundMessage.nullifiedBy = nullifiedBy[0].elementId;
-                this.state.newRoundMessages.push(newRoundMessage);
+                var endRoundMessage = new EndRoundMessage();
+                endRoundMessage.type = card.type;
+                endRoundMessage.playerId = player.sessionId;
+                endRoundMessage.cardSrc = card.cardId;
+                endRoundMessage.nullifiedBy = nullifiedBy[0].elementId;
+                this.state.newRoundMessages.push(endRoundMessage.clone()); // TODO remove this when client is ready.
+
+                if (!this.state.endRoundNullifiedEffects[player.sessionId]) {
+                    var endRoundNullifiedEffects = new EndRoundNullifiedEffects();
+                    endRoundNullifiedEffects.playerId = player.sessionId;
+                    this.state.endRoundNullifiedEffects[player.sessionId] = endRoundNullifiedEffects;
+                }
+                this.state.endRoundNullifiedEffects[player.sessionId].endRoundMessages.push(endRoundMessage)
+
             } else {
                 var onCards = new ArraySchema<Card>();
-
-
                 var openIndexes = [];
                 for (var i = 0; i < player.virusField.length; i++) {
                     openIndexes.push(i);
@@ -241,12 +277,12 @@ class GameHandler {
                         const card = onCards[j];
                         onCardIds.push(card.cardId);
                     }
-                    var newRoundMessage = new NewRoundMessage();
-                    newRoundMessage.type = card.type;
-                    newRoundMessage.action = card.action;
-                    newRoundMessage.playerId = player.sessionId;
-                    newRoundMessage.cardSrc = card.cardId;
-                    newRoundMessage.cardTargets = onCardIds;
+                    var endRoundMessage = new EndRoundMessage();
+                    endRoundMessage.type = card.type;
+                    endRoundMessage.action = card.action;
+                    endRoundMessage.playerId = player.sessionId;
+                    endRoundMessage.cardSrc = card.cardId;
+                    endRoundMessage.cardTargets = onCardIds;
                     var virusTokenImpact;
                     switch (card.type) {
                         case Constants.ACTION_DESTROY_VIRUS_TOKEN:
@@ -262,8 +298,18 @@ class GameHandler {
                             virusTokenImpact = "0";
                             break;
                     }
-                    newRoundMessage.virusTokenImpact = virusTokenImpact;
-                    this.state.newRoundMessages.push(newRoundMessage);
+                    endRoundMessage.virusTokenImpact = virusTokenImpact;
+                    this.state.newRoundMessages.push(endRoundMessage.clone()); // TODO remove this when client is ready
+
+                    for (var cardIndex = 0; cardIndex < onCardIds.length; cardIndex++) {
+                        const cardId = onCardIds[cardIndex];
+                        if (!this.state.endRoundEffects[cardId]) {
+                            var endRoundVirusEffects = new EndRoundVirusEffects();
+                            endRoundVirusEffects.virusId = cardId;
+                            this.state.endRoundEffects[cardId] = endRoundVirusEffects;
+                        }
+                        this.state.endRoundEffects[cardId].endRoundMessages.push(endRoundMessage)
+                    }
                 }
             }
         });
@@ -271,7 +317,8 @@ class GameHandler {
     applyEndRoundRules() {
         console.log("end round");
 
-        this.state.newRoundMessages = new ArraySchema<NewRoundMessage>();
+        this.state.newRoundMessages = new ArraySchema<EndRoundMessage>(); //TODO remove this when client is ready.
+        this.state.endRoundEffects = new MapSchema();
 
         for (let id in this.state.players) {
             var player = this.state.players[id];
@@ -283,13 +330,22 @@ class GameHandler {
                         let cardTargets = new ArraySchema<string>();
                         cardTargets.push(virus.cardId);
 
-                        var newRoundMessage = new NewRoundMessage();
-                        newRoundMessage.type = virus.type;
-                        newRoundMessage.action = virus.action;
-                        newRoundMessage.playerId = player.sessionId;
-                        newRoundMessage.cardTargets = cardTargets
-                        newRoundMessage.virusTokenImpact = "+" + virus.maxTokensImpact;
-                        this.state.newRoundMessages.push(newRoundMessage);
+                        var endRoundMessage = new EndRoundMessage();
+                        endRoundMessage.type = virus.type;
+                        endRoundMessage.action = virus.action;
+                        endRoundMessage.playerId = player.sessionId;
+                        endRoundMessage.cardTargets = cardTargets
+                        endRoundMessage.virusTokenImpact = "+" + virus.maxTokensImpact;
+
+                        this.state.newRoundMessages.push(endRoundMessage.clone()); //TODO remove this when client is ready.
+
+                        if (!this.state.endRoundEffects[virus.cardId]) {
+                            var endRoundVirusEffects = new EndRoundVirusEffects();
+                            endRoundVirusEffects.virusId = virus.cardId;
+                            this.state.endRoundEffects[virus.cardId] = endRoundVirusEffects;
+                        }
+
+                        this.state.endRoundEffects[virus.cardId].endRoundMessages.push(endRoundMessage)
                     }
                 });
 
