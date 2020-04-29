@@ -52,7 +52,7 @@ export class PandemicTogetherRoom extends Room {
           }
       } catch (err) {
         console.log("Error catched", err.message);
-        this.broadcast({type: Constants.SERVER_ERROR, message: err.message});
+        this.broadcast({type: Constants.GAME_SERVER_ERROR, message: err.message});
       }
   }
 
@@ -63,7 +63,7 @@ export class PandemicTogetherRoom extends Room {
 
     //game over
     this.unlock();
-    this.broadcast({type: "SERVER_MESSAGE", action: "GAME_OVER", reason: client.sessionId + " left"});
+    this.broadcast({type: Constants.GAME_SERVER_MESSAGE, action: "GAME_OVER", reason: client.sessionId + " left"});
     this.gameManager.resetGame(); //keep room
 
   }
