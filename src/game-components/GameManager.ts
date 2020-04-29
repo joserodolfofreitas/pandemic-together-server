@@ -463,11 +463,17 @@ class GameHandler {
     playerPlays(playMessage) {
         if (this.state.gameState != Constants.GAME_STATE_OVER) {
             var player = this.state.players[playMessage.player];
+            if (!player) {
+                throw new Error("Player Id not found on server");
+            }
+
             var onPlayer = this.state.players[playMessage.onPlayer];
+            if (!onPlayer) {
+                throw new Error("OnPlayer Id not found on server");
+            }
 
             var cardPlayed = player.hand.filter(card => card.cardId == playMessage.cardPlayed.cardId)[0]; //playMessage.cardPlayed;
-
-            if (cardPlayed == undefined) {
+            if (!cardPlayed) {
                 throw new Error("CardPlayed not found on server");
             }
 
